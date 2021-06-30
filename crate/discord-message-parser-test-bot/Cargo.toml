@@ -1,0 +1,21 @@
+[package]
+name = "discord-message-parser-test-bot"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies.discord-message-parser]
+path = "../discord-message-parser"
+features = ["serenity"]
+
+[dependencies.serenity]
+version = "0.10"
+default-features = false
+features = ["builder", "cache", "client", "gateway", "http", "model", "rustls_backend"]
+
+[dependencies.serenity-utils]
+git = "https://github.com/fenhl/serenity-utils" #TODO publish to crates.io
+branch = "main"
+
+[dependencies.tokio]
+version = "1"
+features = ["macros", "rt-multi-thread", "time"]
