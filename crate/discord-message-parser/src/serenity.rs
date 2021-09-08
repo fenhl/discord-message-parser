@@ -1,5 +1,5 @@
 use {
-    dep_serenity::model::channel::Message,
+    ::serenity::model::channel::Message,
     crate::MessagePart,
 };
 

@@ -5,7 +5,6 @@ edition = "2018"
 
 [dependencies.discord-message-parser]
 path = "../discord-message-parser"
-features = ["serenity"]
 
 [dependencies.serenity]
 version = "0.10"
