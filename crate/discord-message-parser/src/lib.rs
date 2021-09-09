@@ -13,7 +13,6 @@ static UNSTYLED_TIMESTAMP: Lazy<Regex> = Lazy::new(|| Regex::new("^<t:(-?[0-9]+)
 static STYLED_TIMESTAMP: Lazy<Regex> = Lazy::new(|| Regex::new("^<t:(-?[0-9]+):(.)>$").expect("failed to parse STYLED_TIMESTAMP regex"));
 
 #[derive(Debug)]
-#[non_exhaustive] // for future Discord features
 pub enum TimestampStyle {
     ShortTime,
     LongTime,
@@ -43,7 +42,6 @@ impl FromStr for TimestampStyle {
 
 /// A parsed Discord message.
 #[derive(Debug)]
-#[non_exhaustive] // for future Discord features
 pub enum MessagePart<'a> {
     Empty,
     Nested(Vec<MessagePart<'a>>),
