@@ -1,6 +1,10 @@
 use {
-    std::str::FromStr,
+    std::{
+        fmt,
+        str::FromStr,
+    },
     chrono::prelude::*,
+    derivative::Derivative,
     once_cell::sync::Lazy,
     regex::Regex,
     ::serenity::model::prelude::*,
@@ -12,15 +16,32 @@ static ANGLE_BRACKETS: Lazy<Regex> = Lazy::new(|| Regex::new("<.+?>").expect("fa
 static UNSTYLED_TIMESTAMP: Lazy<Regex> = Lazy::new(|| Regex::new("^<t:(-?[0-9]+)>$").expect("failed to parse UNSTYLED_TIMESTAMP regex"));
 static STYLED_TIMESTAMP: Lazy<Regex> = Lazy::new(|| Regex::new("^<t:(-?[0-9]+):(.)>$").expect("failed to parse STYLED_TIMESTAMP regex"));
 
-#[derive(Debug)]
+#[derive(Derivative, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derivative(Default)]
 pub enum TimestampStyle {
     ShortTime,
     LongTime,
     ShortDate,
     LongDate,
+    #[derivative(Default)]
     ShortDateTime,
     LongDateTime,
     RelativeTime,
+}
+
+impl TimestampStyle {
+    pub fn fmt<Tz: TimeZone>(&self, timestamp: DateTime<Tz>) -> String
+    where Tz::Offset: fmt::Display {
+        match self {
+            Self::ShortTime => timestamp.format("%H:%M").to_string(),
+            Self::LongTime => timestamp.format("%H:%M:%S").to_string(),
+            Self::ShortDate => timestamp.format("%Y-%m-%d").to_string(),
+            Self::LongDate => timestamp.format("%Y-%m-%d").to_string(),
+            Self::ShortDateTime => timestamp.format("%Y-%m-%d %H:%M").to_string(),
+            Self::LongDateTime => timestamp.format("%A, %Y-%m-%d %H:%M").to_string(),
+            Self::RelativeTime => timestamp.format("%Y-%m-%d %H:%M:%S").to_string(), //TODO
+        }
+    }
 }
 
 impl FromStr for TimestampStyle {
@@ -28,13 +49,13 @@ impl FromStr for TimestampStyle {
 
     fn from_str(s: &str) -> Result<Self, ()> {
         match s {
-            "t" => Ok(TimestampStyle::ShortTime),
-            "T" => Ok(TimestampStyle::LongTime),
-            "d" => Ok(TimestampStyle::ShortDate),
-            "D" => Ok(TimestampStyle::LongDate),
-            "f" => Ok(TimestampStyle::ShortDateTime),
-            "F" => Ok(TimestampStyle::LongDateTime),
-            "R" => Ok(TimestampStyle::RelativeTime),
+            "t" => Ok(Self::ShortTime),
+            "T" => Ok(Self::LongTime),
+            "d" => Ok(Self::ShortDate),
+            "D" => Ok(Self::LongDate),
+            "f" => Ok(Self::ShortDateTime),
+            "F" => Ok(Self::LongDateTime),
+            "R" => Ok(Self::RelativeTime),
             _ => Err(()),
         }
     }
