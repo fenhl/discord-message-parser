@@ -1,0 +1,12 @@
+query TwemojiListQuery {
+  repository(owner: "twitter", name: "twemoji") {
+    object(expression: "master:assets/svg") {
+      __typename
+      ... on Tree {
+        entries {
+          name
+        }
+      }
+    }
+  }
+}

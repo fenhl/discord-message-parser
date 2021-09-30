@@ -10,4 +10,5 @@ Cargo.lock
 **/*.rs.bk
 
 # client secret for the test bot
+/assets/github-token.txt
 /assets/test-bot-token

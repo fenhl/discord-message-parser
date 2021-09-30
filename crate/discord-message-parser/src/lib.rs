@@ -23,6 +23,16 @@ static ANGLE_BRACKETS: Lazy<Regex> = Lazy::new(|| Regex::new("<.+?>").expect("fa
 static UNSTYLED_TIMESTAMP: Lazy<Regex> = Lazy::new(|| Regex::new("^<t:(-?[0-9]+)>$").expect("failed to parse UNSTYLED_TIMESTAMP regex"));
 static STYLED_TIMESTAMP: Lazy<Regex> = Lazy::new(|| Regex::new("^<t:(-?[0-9]+):(.)>$").expect("failed to parse STYLED_TIMESTAMP regex"));
 
+#[cfg(feature = "twemoji")]
+discord_message_parser_derive::parse_unicode!();
+
+#[cfg(not(feature = "twemoji"))]
+fn parse_unicode<'a>(parts: &mut Vec<MessagePart<'a>>, s: &'a str) {
+    if !s.is_empty() {
+        parts.push(MessagePart::PlainText(s))
+    }
+}
+
 /// The formatting information in a timestamp message formatting tag.
 ///
 /// See also [Discord's documentation](https://discord.com/developers/docs/reference#message-formatting-timestamp-styles).
@@ -166,7 +176,11 @@ pub enum MessagePart<'a> {
     ChannelMention(ChannelId),
     /// A tag referring to a role.
     RoleMention(RoleId),
-    //UnicodeEmoji(), //TODO content type
+    #[cfg(feature = "twemoji")]
+    /// A default Unicode emoji.
+    ///
+    /// Note that only emoji present in the [Twemoji](https://github.com/twitter/twemoji) font are parsed as this, since those are the emoji Discord supports in reactions etc.
+    UnicodeEmoji(&'static str),
     /// A custom (i.e. non-Unicode) emoji.
     CustomEmoji(EmojiIdentifier),
     /// A timestamp tag. See [Discord's docs](https://discord.com/developers/docs/reference#message-formatting) for details.
@@ -184,45 +198,33 @@ impl<'a> From<&'a str> for MessagePart<'a> {
         let mut start = 0;
         for tag in ANGLE_BRACKETS.find_iter(s) {
             if let Ok(user) = tag.as_str().parse() {
-                if tag.start() > start {
-                    parts.push(MessagePart::PlainText(&s[start..tag.start()]));
-                }
+                parse_unicode(&mut parts, &s[start..tag.start()]);
                 parts.push(MessagePart::UserMention {
                     user,
                     nickname_mention: tag.as_str().starts_with("<@!"),
                 });
                 start = tag.end();
             } else if let Ok(channel) = tag.as_str().parse() {
-                if tag.start() > start {
-                    parts.push(MessagePart::PlainText(&s[start..tag.start()]));
-                }
+                parse_unicode(&mut parts, &s[start..tag.start()]);
                 parts.push(MessagePart::ChannelMention(channel));
                 start = tag.end();
             } else if let Ok(role) = tag.as_str().parse() {
-                if tag.start() > start {
-                    parts.push(MessagePart::PlainText(&s[start..tag.start()]));
-                }
+                parse_unicode(&mut parts, &s[start..tag.start()]);
                 parts.push(MessagePart::RoleMention(role));
                 start = tag.end();
             } else if let Ok(emoji) = tag.as_str().parse() {
-                if tag.start() > start {
-                    parts.push(MessagePart::PlainText(&s[start..tag.start()]));
-                }
+                parse_unicode(&mut parts, &s[start..tag.start()]);
                 parts.push(MessagePart::CustomEmoji(emoji));
                 start = tag.end();
             } else if let Some(timestamp) = UNSTYLED_TIMESTAMP.captures(tag.as_str()).and_then(|captures| captures[1].parse().ok()) {
-                if tag.start() > start {
-                    parts.push(MessagePart::PlainText(&s[start..tag.start()]));
-                }
+                parse_unicode(&mut parts, &s[start..tag.start()]);
                 parts.push(MessagePart::Timestamp {
                     timestamp: Utc.timestamp(timestamp, 0),
                     style: None,
                 });
                 start = tag.end();
             } else if let Some((timestamp, style)) = STYLED_TIMESTAMP.captures(tag.as_str()).and_then(|captures| Some((captures[1].parse().ok()?, captures[2].parse().ok()?))) {
-                if tag.start() > start {
-                    parts.push(MessagePart::PlainText(&s[start..tag.start()]));
-                }
+                parse_unicode(&mut parts, &s[start..tag.start()]);
                 parts.push(MessagePart::Timestamp {
                     timestamp: Utc.timestamp(timestamp, 0),
                     style: Some(style),
@@ -230,9 +232,7 @@ impl<'a> From<&'a str> for MessagePart<'a> {
                 start = tag.end();
             }
         }
-        if s.len() > start {
-            parts.push(MessagePart::PlainText(&s[start..]));
-        }
+        parse_unicode(&mut parts, &s[start..]);
         match parts.len() {
             0 => MessagePart::Empty,
             1 => parts.remove(0),
