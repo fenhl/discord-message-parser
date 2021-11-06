@@ -1,0 +1,10 @@
+query TwemojiHeadQuery {
+  repository(owner: "twitter", name: "twemoji") {
+    defaultBranchRef {
+      target {
+        __typename
+        oid
+      }
+    }
+  }
+}

@@ -23,15 +23,7 @@ static ANGLE_BRACKETS: Lazy<Regex> = Lazy::new(|| Regex::new("<.+?>").expect("fa
 static UNSTYLED_TIMESTAMP: Lazy<Regex> = Lazy::new(|| Regex::new("^<t:(-?[0-9]+)>$").expect("failed to parse UNSTYLED_TIMESTAMP regex"));
 static STYLED_TIMESTAMP: Lazy<Regex> = Lazy::new(|| Regex::new("^<t:(-?[0-9]+):(.)>$").expect("failed to parse STYLED_TIMESTAMP regex"));
 
-#[cfg(feature = "twemoji")]
-discord_message_parser_derive::parse_unicode!();
-
-#[cfg(not(feature = "twemoji"))]
-fn parse_unicode<'a>(parts: &mut Vec<MessagePart<'a>>, s: &'a str) {
-    if !s.is_empty() {
-        parts.push(MessagePart::PlainText(s))
-    }
-}
+include!(concat!(env!("OUT_DIR"), "/twemoji.rs"));
 
 /// The formatting information in a timestamp message formatting tag.
 ///
@@ -176,7 +168,6 @@ pub enum MessagePart<'a> {
     ChannelMention(ChannelId),
     /// A tag referring to a role.
     RoleMention(RoleId),
-    #[cfg(feature = "twemoji")]
     /// A default Unicode emoji.
     ///
     /// Note that only emoji present in the [Twemoji](https://github.com/twitter/twemoji) font are parsed as this, since those are the emoji Discord supports in reactions etc.
