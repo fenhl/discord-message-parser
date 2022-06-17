@@ -7,7 +7,6 @@ use {
     },
     serenity::{
         async_trait,
-        client::bridge::gateway::GatewayIntents,
         framework::standard::StandardFramework,
         model::prelude::*,
         prelude::*,
@@ -42,9 +41,8 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() -> serenity::Result<()> {
-    let mut client = Client::builder(include_str!("../../../assets/test-bot-token"))
+    let mut client = Client::builder(include_str!("../../../assets/test-bot-token"), GatewayIntents::GUILD_MESSAGES)
         .event_handler(Handler)
-        .intents(GatewayIntents::GUILD_MESSAGES)
         .framework(StandardFramework::default()) // some dependency seems to have enabled serenity's `framework` feature
         .await?;
     client.data.write().await.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
