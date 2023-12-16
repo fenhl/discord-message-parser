@@ -6,6 +6,7 @@ use {
         time::Duration,
     },
     serenity::{
+        all::CreateBotAuthParameters,
         async_trait,
         framework::standard::StandardFramework,
         model::prelude::*,
@@ -21,12 +22,16 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn ready(&self, ctx: Context, ready: Ready) {
+    async fn ready(&self, ctx: Context, data_about_bot: Ready) {
         println!("Ready");
-        let guilds = ready.user.guilds(&ctx).await.expect("failed to get guilds");
-        if guilds.is_empty() {
+        if data_about_bot.guilds.is_empty() {
             println!("No guilds found, use following URL to invite the bot:");
-            println!("{}", ready.user.invite_url(&ctx, Permissions::empty()).await.expect("failed to generate invite URL"));
+            let invite_url = CreateBotAuthParameters::new()
+                .permissions(Permissions::empty())
+                .scopes(&[Scope::Bot])
+                .auto_client_id(&ctx).await.expect("failed to generate invite URL")
+                .build();
+            println!("{invite_url}");
             serenity_utils::shut_down(&ctx).await;
         }
     }
@@ -35,7 +40,7 @@ impl EventHandler for Handler {
         if msg.author.bot { return; } // ignore bots to prevent message loops
         let parsed_message = msg.parse();
         println!("{:?} -> {:#?}", msg.content, parsed_message);
-        msg.reply(ctx, MessageBuilder::default().push_codeblock_safe(format!("{:#?}", parsed_message), Some("rust"))).await.expect("failed to send reply");
+        msg.reply(ctx, MessageBuilder::default().push_codeblock_safe(format!("{:#?}", parsed_message), Some("rust")).build()).await.expect("failed to send reply");
     }
 }
 

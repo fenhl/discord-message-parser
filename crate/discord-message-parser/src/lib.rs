@@ -207,18 +207,18 @@ impl<'a> From<&'a str> for MessagePart<'a> {
                 parse_unicode(&mut parts, &s[start..tag.start()]);
                 parts.push(MessagePart::CustomEmoji(emoji));
                 start = tag.end();
-            } else if let Some(timestamp) = UNSTYLED_TIMESTAMP.captures(tag.as_str()).and_then(|captures| captures[1].parse().ok()) {
+            } else if let Some(timestamp) = UNSTYLED_TIMESTAMP.captures(tag.as_str()).and_then(|captures| Utc.timestamp_opt(captures[1].parse().ok()?, 0).single()) {
                 parse_unicode(&mut parts, &s[start..tag.start()]);
                 parts.push(MessagePart::Timestamp {
-                    timestamp: Utc.timestamp(timestamp, 0),
                     style: None,
+                    timestamp,
                 });
                 start = tag.end();
-            } else if let Some((timestamp, style)) = STYLED_TIMESTAMP.captures(tag.as_str()).and_then(|captures| Some((captures[1].parse().ok()?, captures[2].parse().ok()?))) {
+            } else if let Some((timestamp, style)) = STYLED_TIMESTAMP.captures(tag.as_str()).and_then(|captures| Some((Utc.timestamp_opt(captures[1].parse().ok()?, 0).single()?, captures[2].parse().ok()?))) {
                 parse_unicode(&mut parts, &s[start..tag.start()]);
                 parts.push(MessagePart::Timestamp {
-                    timestamp: Utc.timestamp(timestamp, 0),
                     style: Some(style),
+                    timestamp,
                 });
                 start = tag.end();
             }
